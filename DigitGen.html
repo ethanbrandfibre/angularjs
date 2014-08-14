@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html ng-app="digitGenApp">
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>DigitGen</title>
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="css/digitGen.css"/>
+    <!-- prevent FOUC -->
+</head>
+<body>
+
+<div id="result" ng-controller="DigitsGenCtrl">
+    <div class="table-responsive">
+        <p class="bg-primary">Generated 4-digit-pin</p>
+        <table class="table table-striped">
+            <tr>
+                <th>Pin index</th>
+                <th>Pin value</th>
+            </tr>
+            <tr ng-repeat="item in resultArray">
+                <td>{{item.idx}}</td>
+                <td>{{item.digits}}</td>
+            </tr>
+        </table>
+    </div>
+</div>
+<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.19/angular.min.js"></script>
+<script src="services/DigitGenServices.js"></script>
+<script>
+    angular.module("digitGenApp", ["digitGenServices"])
+            .constant("totalGen", 1000)//configurable constants
+            .constant("length", 4)//configurable constants
+            .controller("DigitsGenCtrl", function ($scope, totalGen, length, digitGenServices) {
+
+                //generate the digits
+                var digitArray = [];
+                var digitStr;
+                var i = 0;
+
+                while (true) {
+                    i++;
+                    digitStr = (Math.floor(Math.random() * 10)).toString();//convert to String for the following concatenation
+                    for (var j = 0; j < length - 1; j++) {
+                        digitStr += Math.floor(Math.random() * 10);
+                    }
+
+                    if (!digitStr) {
+                        continue;
+                    }
+
+                    //check double duplicate
+                    if (digitGenServices.isDupDigs(digitStr, 0)) {
+                        console.debug(" isDupDigs removed: " + digitStr);
+                        continue;
+                    }
+
+                    //check consecutive
+                    if (digitGenServices.isConsDigs(digitStr)) {
+                        console.debug(" isConsDigs removed: " + digitStr);
+                        continue;
+                    }
+
+                    //check whole duplicate
+                    if (digitGenServices.isDigitExist(digitStr, digitArray)) {
+                        console.debug(" isDigitExist removed: " + digitStr);
+                        continue;
+                    }
+
+                    digitArray.push(digitStr);
+
+                    if (digitArray.length == totalGen) {//stop loop after generating enough digits
+                        $scope.resultArray = [];
+                        console.debug(JSON.stringify(digitArray));
+                        for (var idx in digitArray) {
+                            console.debug(digitArray[idx]);
+                            $scope.resultArray.push({idx: idx, digits: digitArray[idx]});
+                        }
+                        console.debug(i + " loops");
+                        break;
+                    }
+                }
+            })
+    ;
+</script>
+</body>
+</html>
